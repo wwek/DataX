@@ -65,6 +65,10 @@ public class HdfsWriter extends Writer {
                 String message = String.format("请检查参数path:[%s],不能包含*,?等特殊字符", path);
                 LOG.error(message);
                 throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE, message);
+            }else if(path.contains("\\")){
+                String message = String.format("请检查参数path:[%s],不能包含\\ Windows上的目录分隔符", path);
+                LOG.error(message);
+                throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE, message);
             }
             //fileName
             this.fileName = this.writerSliceConfig.getNecessaryValue(Key.FILE_NAME, HdfsWriterErrorCode.REQUIRED_VALUE);
@@ -81,10 +85,10 @@ public class HdfsWriter extends Writer {
             //writeMode check
             this.writeMode = this.writerSliceConfig.getNecessaryValue(Key.WRITE_MODE, HdfsWriterErrorCode.REQUIRED_VALUE);
             writeMode = writeMode.toLowerCase().trim();
-            Set<String> supportedWriteModes = Sets.newHashSet("append", "nonconflict");
+            Set<String> supportedWriteModes = Sets.newHashSet("truncate","append", "nonconflict");
             if (!supportedWriteModes.contains(writeMode)) {
                 throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("仅支持append, nonConflict两种模式, 不支持您配置的 writeMode 模式 : [%s]",
+                        String.format("仅支持truncate, append, nonConflict三种模式, 不支持您配置的 writeMode 模式 : [%s]",
                                 writeMode));
             }
             this.writerSliceConfig.set(Key.WRITE_MODE, writeMode);
@@ -160,14 +164,11 @@ public class HdfsWriter extends Writer {
                 if(existFilePaths.length > 0){
                     isExistFile = true;
                 }
-                /**
-                 if ("truncate".equals(writeMode) && isExistFile ) {
-                 LOG.info(String.format("由于您配置了writeMode truncate, 开始清理 [%s] 下面以 [%s] 开头的内容",
-                 path, fileName));
-                 hdfsHelper.deleteFiles(existFilePaths);
-                 } else
-                 */
-                if ("append".equalsIgnoreCase(writeMode)) {
+                if ("truncate".equals(writeMode) && isExistFile ) {
+                    LOG.info(String.format("由于您配置了writeMode truncate, 开始清理 [%s] 下面以 [%s] 开头的内容",
+                    path, fileName));
+                    hdfsHelper.deleteFiles(existFilePaths);
+                } else if ("append".equalsIgnoreCase(writeMode)) {
                     LOG.info(String.format("由于您配置了writeMode append, 写入前不做清理工作, [%s] 目录下写入相应文件名前缀  [%s] 的文件",
                             path, fileName));
                 } else if ("nonconflict".equalsIgnoreCase(writeMode) && isExistFile) {
