@@ -65,6 +65,10 @@ public class HdfsWriter extends Writer {
                 String message = String.format("请检查参数path:[%s],不能包含*,?等特殊字符", path);
                 LOG.error(message);
                 throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE, message);
+            }else if(path.contains("\\")){
+                String message = String.format("请检查参数path:[%s],不能包含\\ Windows上的目录分隔符", path);
+                LOG.error(message);
+                throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE, message);
             }
             //fileName
             this.fileName = this.writerSliceConfig.getNecessaryValue(Key.FILE_NAME, HdfsWriterErrorCode.REQUIRED_VALUE);
